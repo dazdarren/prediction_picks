@@ -41,7 +41,7 @@ export default function TopPicks({ picks, onSelectPick }: TopPicksProps) {
           </svg>
         </div>
         <p className="text-gray-500 dark:text-gray-400">
-          No mispriced markets found yet. Analyze markets to find opportunities.
+          No mispriced markets found yet. Click <span className="font-semibold text-orange-500">"Scan Top 10"</span> to auto-analyze the highest volume markets.
         </p>
       </div>
     );

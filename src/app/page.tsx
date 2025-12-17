@@ -26,6 +26,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortOption>('volume');
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState<{ current: number; total: number } | undefined>(undefined);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
@@ -77,6 +79,59 @@ export default function Home() {
     }
   };
 
+  const handleScan = async () => {
+    // Get top 10 markets by volume from all events
+    const allMarkets = events
+      .flatMap((e) => e.markets)
+      .sort((a, b) => b.volume - a.volume)
+      .slice(0, 10);
+
+    if (allMarkets.length === 0) {
+      alert('No markets to scan. Please refresh first.');
+      return;
+    }
+
+    setIsScanning(true);
+    setScanProgress({ current: 0, total: allMarkets.length });
+
+    const newPicks: ConsensusAnalysis[] = [];
+
+    for (let i = 0; i < allMarkets.length; i++) {
+      const market = allMarkets[i];
+      setScanProgress({ current: i + 1, total: allMarkets.length });
+      setAnalyzingTicker(market.ticker);
+
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ market }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (Math.abs(data.analysis.edgePercentage) > 3) {
+            newPicks.push(data.analysis);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to analyze ${market.ticker}:`, err);
+      }
+    }
+
+    // Update top picks with new results
+    setTopPicks((prev) => {
+      const existingTickers = new Set(newPicks.map((p) => p.market.ticker));
+      const filtered = prev.filter((p) => !existingTickers.has(p.market.ticker));
+      const combined = [...filtered, ...newPicks];
+      return combined.sort((a, b) => b.mispricingScore - a.mispricingScore).slice(0, 10);
+    });
+
+    setIsScanning(false);
+    setScanProgress(undefined);
+    setAnalyzingTicker(null);
+  };
+
   // Get unique categories
   const categories = ['all', ...new Set(events.map((e) => e.category).filter(Boolean))];
 
@@ -123,7 +178,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <Header onRefresh={fetchEvents} isLoading={isLoading} />
+      <Header
+        onRefresh={fetchEvents}
+        isLoading={isLoading}
+        onScan={handleScan}
+        isScanning={isScanning}
+        scanProgress={scanProgress}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Top Picks Section */}

@@ -27,8 +27,18 @@ function getGemini() {
 
 function buildAnalysisPrompt(market: KalshiMarket): string {
   const impliedProb = ((market.yes_bid + market.yes_ask) / 2 * 100).toFixed(1);
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
-  return `You are a prediction market analyst. Give a quick, actionable take on this market.
+  return `You are a prediction market analyst. Today's date is ${currentDate}.
+
+IMPORTANT CONTEXT:
+- Donald Trump won the 2024 US Presidential Election and will be inaugurated in January 2025
+- Trump cannot run again in 2028 due to term limits (22nd Amendment)
+- Use your knowledge of current events up to today's date
 
 Market: ${market.title}
 ${market.yes_sub_title ? `Outcome: ${market.yes_sub_title}` : ''}
