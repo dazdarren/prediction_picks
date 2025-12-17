@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Prediction Picks
+
+AI-powered prediction market analysis tool that identifies mispriced opportunities on Kalshi using OpenAI, Anthropic Claude, and Google Gemini.
+
+## Features
+
+- **Live Market Data**: Fetches current prediction market odds from Kalshi's public API
+- **Triple AI Analysis**: Uses GPT-4o, Claude, and Gemini to estimate true probabilities
+- **Mispricing Detection**: Compares AI consensus against market prices to find edge
+- **Confidence Scoring**: Weights analysis by AI confidence levels
+- **Top Picks Dashboard**: Ranks opportunities by mispricing score
+
+## How It Works
+
+1. **Fetch Markets**: Pulls live market data from Kalshi
+2. **AI Analysis**: Each market can be analyzed by all 3 AI models simultaneously
+3. **Consensus Building**: Combines estimates weighted by confidence
+4. **Edge Calculation**: Compares AI probability vs market implied probability
+5. **Recommendations**: Generates buy/hold signals based on edge and confidence
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+You'll need API keys for the AI providers:
+
+- OpenAI API Key: https://platform.openai.com/api-keys
+- Anthropic API Key: https://console.anthropic.com/settings/keys
+- Google AI API Key: https://makersuite.google.com/app/apikey
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Create your environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+4. Add your API keys to `.env.local`:
+
+```env
+OPENAI_API_KEY=sk-your-openai-key
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+GOOGLE_AI_API_KEY=your-google-ai-key
+```
+
+5. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+6. Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Browse Markets**: View open Kalshi markets with current odds
+2. **Filter & Search**: Find specific markets by category or keyword
+3. **Analyze**: Click "Analyze with AI" on any market
+4. **Review Results**: See probability estimates from each AI provider
+5. **Track Picks**: Markets with significant edge are added to Top Picks
 
-## Learn More
+## Understanding the Analysis
 
-To learn more about Next.js, take a look at the following resources:
+- **AI Estimate**: Weighted consensus probability from all 3 AI models
+- **Market Price**: Current implied probability from Kalshi bid/ask
+- **Edge**: Difference between AI estimate and market price
+- **Confidence**: Average confidence across AI providers
+- **Mispricing Score**: Edge x Confidence (higher = stronger signal)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Recommendations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Recommendation | Meaning |
+|---------------|---------|
+| Strong Buy YES | AI estimates >15% higher than market |
+| Buy YES | AI estimates 5-15% higher than market |
+| Hold | AI estimate within 5% of market |
+| Buy NO | AI estimates 5-15% lower than market |
+| Strong Buy NO | AI estimates >15% lower than market |
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Framework**: Next.js 16 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **AI APIs**: OpenAI, Anthropic, Google Generative AI
+- **Market Data**: Kalshi Public API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Disclaimer
+
+This tool is for educational and informational purposes only. Prediction markets involve financial risk. Always do your own research and never invest more than you can afford to lose. Past AI performance does not guarantee future accuracy.
+
+## License
+
+MIT
