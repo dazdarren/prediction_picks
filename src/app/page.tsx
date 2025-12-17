@@ -7,6 +7,15 @@ import AnalysisModal from '@/components/AnalysisModal';
 import TopPicks from '@/components/TopPicks';
 import { KalshiEvent, KalshiMarket, ConsensusAnalysis } from '@/types';
 
+type SortOption = 'volume' | 'ending_soon' | 'trending' | 'newest';
+
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: 'volume', label: 'Most Popular' },
+  { value: 'trending', label: 'Trending (24h)' },
+  { value: 'ending_soon', label: 'Ending Soon' },
+  { value: 'newest', label: 'Newest' },
+];
+
 export default function Home() {
   const [events, setEvents] = useState<KalshiEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,6 +23,7 @@ export default function Home() {
   const [selectedAnalysis, setSelectedAnalysis] = useState<ConsensusAnalysis | null>(null);
   const [topPicks, setTopPicks] = useState<ConsensusAnalysis[]>([]);
   const [filter, setFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('volume');
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -70,17 +80,46 @@ export default function Home() {
   // Get unique categories
   const categories = ['all', ...new Set(events.map((e) => e.category).filter(Boolean))];
 
-  // Filter events
-  const filteredEvents = events.filter((event) => {
-    const matchesFilter = filter === 'all' || event.category === filter;
-    const matchesSearch =
-      searchTerm === '' ||
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.markets.some((m) =>
-        m.yes_sub_title?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    return matchesFilter && matchesSearch;
-  });
+  // Helper to get event metrics (from first/primary market)
+  const getEventMetrics = (event: KalshiEvent) => {
+    const totalVolume = event.markets.reduce((sum, m) => sum + m.volume, 0);
+    const totalVolume24h = event.markets.reduce((sum, m) => sum + m.volume_24h, 0);
+    const earliestClose = event.markets.reduce((earliest, m) => {
+      const closeTime = new Date(m.close_time).getTime();
+      return closeTime < earliest ? closeTime : earliest;
+    }, Infinity);
+    return { totalVolume, totalVolume24h, earliestClose };
+  };
+
+  // Filter and sort events
+  const filteredEvents = events
+    .filter((event) => {
+      const matchesFilter = filter === 'all' || event.category === filter;
+      const matchesSearch =
+        searchTerm === '' ||
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.markets.some((m) =>
+          m.yes_sub_title?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      return matchesFilter && matchesSearch;
+    })
+    .sort((a, b) => {
+      const metricsA = getEventMetrics(a);
+      const metricsB = getEventMetrics(b);
+
+      switch (sortBy) {
+        case 'volume':
+          return metricsB.totalVolume - metricsA.totalVolume;
+        case 'trending':
+          return metricsB.totalVolume24h - metricsA.totalVolume24h;
+        case 'ending_soon':
+          return metricsA.earliestClose - metricsB.earliestClose;
+        case 'newest':
+          return metricsB.earliestClose - metricsA.earliestClose;
+        default:
+          return 0;
+      }
+    });
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -98,7 +137,7 @@ export default function Home() {
           <TopPicks picks={topPicks} onSelectPick={setSelectedAnalysis} />
         </section>
 
-        {/* Filters */}
+        {/* Filters & Sort */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
@@ -110,11 +149,22 @@ export default function Home() {
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
-            <div>
+            <div className="flex gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                {sortOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -123,6 +173,9 @@ export default function Home() {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {filteredEvents.length} markets found
           </div>
         </div>
 
