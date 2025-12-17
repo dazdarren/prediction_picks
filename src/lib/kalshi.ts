@@ -167,47 +167,69 @@ export async function fetchEvents(
   limit: number = 20,
   status: string = 'open'
 ): Promise<KalshiEvent[]> {
-  const params = new URLSearchParams({
-    limit: limit.toString(),
-    status,
-    with_nested_markets: 'true',
-  });
+  const allEvents: KalshiEvent[] = [];
+  let cursor: string | undefined;
+  let fetched = 0;
+  const batchSize = Math.min(limit, 100); // Kalshi max per request is 100
 
-  const response = await kalshiFetch(`/events?${params}`);
+  // Paginate to get all requested events
+  while (fetched < limit) {
+    const params = new URLSearchParams({
+      limit: batchSize.toString(),
+      status,
+      with_nested_markets: 'true',
+    });
+    if (cursor) {
+      params.append('cursor', cursor);
+    }
 
-  if (!response.ok) {
-    throw new Error(`Kalshi API error: ${response.status}`);
+    const response = await kalshiFetch(`/events?${params}`);
+
+    if (!response.ok) {
+      throw new Error(`Kalshi API error: ${response.status}`);
+    }
+
+    const data: KalshiEventsResponse = await response.json();
+
+    const events = data.events.map((e) => ({
+      event_ticker: e.event_ticker,
+      series_ticker: e.series_ticker,
+      title: e.title,
+      subtitle: e.subtitle,
+      category: e.category,
+      markets: e.markets?.map((m) => ({
+        ticker: m.ticker,
+        title: m.title,
+        subtitle: m.subtitle,
+        yes_sub_title: m.yes_sub_title,
+        no_sub_title: m.no_sub_title,
+        category: e.category,
+        status: m.status,
+        yes_bid: m.yes_bid / 100,
+        yes_ask: m.yes_ask / 100,
+        no_bid: m.no_bid / 100,
+        no_ask: m.no_ask / 100,
+        last_price: m.last_price / 100,
+        volume: m.volume,
+        volume_24h: m.volume_24h,
+        open_interest: m.open_interest,
+        close_time: m.close_time,
+        result: m.result,
+        rules_primary: m.rules_primary,
+      })) || [],
+    }));
+
+    allEvents.push(...events);
+    fetched += events.length;
+    cursor = data.cursor;
+
+    // Stop if no more results
+    if (!cursor || events.length < batchSize) {
+      break;
+    }
   }
 
-  const data: KalshiEventsResponse = await response.json();
-
-  return data.events.map((e) => ({
-    event_ticker: e.event_ticker,
-    series_ticker: e.series_ticker,
-    title: e.title,
-    subtitle: e.subtitle,
-    category: e.category,
-    markets: e.markets?.map((m) => ({
-      ticker: m.ticker,
-      title: m.title,
-      subtitle: m.subtitle,
-      yes_sub_title: m.yes_sub_title,
-      no_sub_title: m.no_sub_title,
-      category: e.category,
-      status: m.status,
-      yes_bid: m.yes_bid / 100,
-      yes_ask: m.yes_ask / 100,
-      no_bid: m.no_bid / 100,
-      no_ask: m.no_ask / 100,
-      last_price: m.last_price / 100,
-      volume: m.volume,
-      volume_24h: m.volume_24h,
-      open_interest: m.open_interest,
-      close_time: m.close_time,
-      result: m.result,
-      rules_primary: m.rules_primary,
-    })) || [],
-  }));
+  return allEvents.slice(0, limit);
 }
 
 export async function fetchMarketByTicker(ticker: string): Promise<KalshiMarket | null> {

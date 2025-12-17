@@ -5,6 +5,8 @@ import { ConsensusAnalysis } from '@/types';
 interface TopPicksProps {
   picks: ConsensusAnalysis[];
   onSelectPick: (pick: ConsensusAnalysis) => void;
+  isScanning?: boolean;
+  scanProgress?: { current: number; total: number };
 }
 
 const recommendationConfig = {
@@ -28,9 +30,41 @@ const recommendationConfig = {
   },
 };
 
-export default function TopPicks({ picks, onSelectPick }: TopPicksProps) {
+export default function TopPicks({ picks, onSelectPick, isScanning, scanProgress }: TopPicksProps) {
   // Only show actionable picks (not skips)
   const actionablePicks = picks.filter((p) => p.recommendation !== 'skip');
+
+  // Show scanning progress banner
+  if (isScanning) {
+    const progressPercent = scanProgress ? (scanProgress.current / scanProgress.total) * 100 : 0;
+    return (
+      <div className="bg-gradient-to-r from-orange-500 to-yellow-500 rounded-lg shadow-md p-6 text-white">
+        <div className="flex items-center justify-center mb-4">
+          <svg className="animate-spin h-8 w-8 mr-3" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <div>
+            <p className="font-bold text-lg">Scanning Markets...</p>
+            <p className="text-sm opacity-90">Analyzing with 3 AI models (GPT-4o-mini, Claude, Gemini)</p>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full bg-white/30 rounded-full h-3 mb-2">
+          <div
+            className="bg-white h-3 rounded-full transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          ></div>
+        </div>
+
+        <div className="flex justify-between text-sm">
+          <span>{scanProgress ? `${scanProgress.current} of ${scanProgress.total} markets` : 'Starting...'}</span>
+          <span>~{scanProgress ? Math.ceil((scanProgress.total - scanProgress.current) * 5 / 3) : 15}s remaining</span>
+        </div>
+      </div>
+    );
+  }
 
   if (actionablePicks.length === 0) {
     return (

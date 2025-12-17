@@ -33,7 +33,7 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/markets?limit=100');
+      const response = await fetch('/api/markets?limit=200');
       if (!response.ok) throw new Error('Failed to fetch events');
       const data = await response.json();
       setEvents(data.events || []);
@@ -95,37 +95,49 @@ export default function Home() {
     setScanProgress({ current: 0, total: allMarkets.length });
 
     const newPicks: ConsensusAnalysis[] = [];
+    const batchSize = 3; // Analyze 3 markets in parallel
 
-    for (let i = 0; i < allMarkets.length; i++) {
-      const market = allMarkets[i];
-      setScanProgress({ current: i + 1, total: allMarkets.length });
-      setAnalyzingTicker(market.ticker);
+    for (let i = 0; i < allMarkets.length; i += batchSize) {
+      const batch = allMarkets.slice(i, i + batchSize);
+      setScanProgress({ current: Math.min(i + batchSize, allMarkets.length), total: allMarkets.length });
 
-      try {
-        const response = await fetch('/api/analyze', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ market }),
-        });
+      const batchResults = await Promise.all(
+        batch.map(async (market) => {
+          try {
+            const response = await fetch('/api/analyze', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ market }),
+            });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (Math.abs(data.analysis.edgePercentage) > 3) {
-            newPicks.push(data.analysis);
+            if (response.ok) {
+              const data = await response.json();
+              return data.analysis;
+            }
+          } catch (err) {
+            console.error(`Failed to analyze ${market.ticker}:`, err);
           }
+          return null;
+        })
+      );
+
+      // Add picks with significant edge
+      batchResults.forEach((analysis) => {
+        if (analysis && Math.abs(analysis.edgePercentage) > 3) {
+          newPicks.push(analysis);
         }
-      } catch (err) {
-        console.error(`Failed to analyze ${market.ticker}:`, err);
+      });
+
+      // Update top picks incrementally so user sees results as they come in
+      if (newPicks.length > 0) {
+        setTopPicks((prev) => {
+          const existingTickers = new Set(newPicks.map((p) => p.market.ticker));
+          const filtered = prev.filter((p) => !existingTickers.has(p.market.ticker));
+          const combined = [...filtered, ...newPicks];
+          return combined.sort((a, b) => b.mispricingScore - a.mispricingScore).slice(0, 10);
+        });
       }
     }
-
-    // Update top picks with new results
-    setTopPicks((prev) => {
-      const existingTickers = new Set(newPicks.map((p) => p.market.ticker));
-      const filtered = prev.filter((p) => !existingTickers.has(p.market.ticker));
-      const combined = [...filtered, ...newPicks];
-      return combined.sort((a, b) => b.mispricingScore - a.mispricingScore).slice(0, 10);
-    });
 
     setIsScanning(false);
     setScanProgress(undefined);
@@ -195,7 +207,12 @@ export default function Home() {
             </svg>
             Top Mispriced Picks
           </h2>
-          <TopPicks picks={topPicks} onSelectPick={setSelectedAnalysis} />
+          <TopPicks
+            picks={topPicks}
+            onSelectPick={setSelectedAnalysis}
+            isScanning={isScanning}
+            scanProgress={scanProgress}
+          />
         </section>
 
         {/* Filters & Sort */}
