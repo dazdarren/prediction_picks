@@ -200,7 +200,7 @@ export default function Home() {
     });
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-[#0a0a0f]">
       <Header
         onRefresh={fetchEvents}
         isLoading={isLoading}
@@ -211,13 +211,15 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Top Picks Section */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            Top Mispriced Picks
-          </h2>
+        <section className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            </div>
+            <h2 className="text-base font-semibold text-white">Top Opportunities</h2>
+          </div>
           <TopPicks
             picks={topPicks}
             onSelectPick={setSelectedAnalysis}
@@ -227,22 +229,25 @@ export default function Home() {
         </section>
 
         {/* Filters & Sort */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               <input
                 type="text"
                 placeholder="Search markets..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-700 bg-zinc-800/50 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="px-4 py-2.5 rounded-lg border border-zinc-700 bg-zinc-800/50 text-zinc-300 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all cursor-pointer"
               >
                 {sortOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -253,7 +258,7 @@ export default function Home() {
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="px-4 py-2.5 rounded-lg border border-zinc-700 bg-zinc-800/50 text-zinc-300 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all cursor-pointer"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -263,13 +268,13 @@ export default function Home() {
               </select>
             </div>
           </div>
-          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-            <span>{filteredEvents.length} markets found</span>
+          <div className="mt-3 flex items-center gap-2 text-sm text-zinc-500">
+            <span>{filteredEvents.length} markets</span>
             {isLoadingMore && (
-              <span className="flex items-center text-indigo-500">
-                <svg className="animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <span className="flex items-center text-violet-400">
+                <svg className="animate-spin h-3 w-3 mr-1.5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
                 Loading more...
               </span>
@@ -279,11 +284,11 @@ export default function Home() {
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-            <p className="text-red-600 dark:text-red-400">{error}</p>
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 mb-6">
+            <p className="text-rose-400">{error}</p>
             <button
               onClick={fetchEvents}
-              className="mt-2 text-sm text-red-600 dark:text-red-400 underline"
+              className="mt-2 text-sm text-rose-400 hover:text-rose-300 underline underline-offset-2"
             >
               Try again
             </button>
@@ -292,27 +297,27 @@ export default function Home() {
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 animate-pulse"
+                className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 animate-pulse"
               >
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                  <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-4 bg-zinc-800 rounded w-1/4 mb-4" />
+                <div className="h-5 bg-zinc-800 rounded w-3/4 mb-2" />
+                <div className="h-4 bg-zinc-800 rounded w-1/2 mb-4" />
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="h-16 bg-zinc-800 rounded-lg" />
+                  <div className="h-16 bg-zinc-800 rounded-lg" />
                 </div>
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-10 bg-zinc-800 rounded-lg" />
               </div>
             ))}
           </div>
         ) : (
           <>
             {/* Events Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredEvents.map((event) => (
                 <EventCard
                   key={event.event_ticker}
@@ -325,22 +330,25 @@ export default function Home() {
 
             {/* Empty State */}
             {filteredEvents.length === 0 && !error && (
-              <div className="text-center py-12">
-                <svg
-                  className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <p className="text-gray-500 dark:text-gray-400">
-                  No markets found matching your criteria.
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-zinc-800 mb-4">
+                  <svg
+                    className="w-7 h-7 text-zinc-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-zinc-400 mb-1">No markets found</p>
+                <p className="text-sm text-zinc-500">
+                  Try adjusting your search or filters
                 </p>
               </div>
             )}
