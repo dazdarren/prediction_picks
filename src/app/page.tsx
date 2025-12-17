@@ -33,7 +33,7 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/markets?limit=200');
+      const response = await fetch('/api/markets'); // Fetch all available events
       if (!response.ok) throw new Error('Failed to fetch events');
       const data = await response.json();
       setEvents(data.events || []);

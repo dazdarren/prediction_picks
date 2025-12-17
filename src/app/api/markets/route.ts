@@ -4,7 +4,8 @@ import { fetchEvents } from '@/lib/kalshi';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '50');
+    // Default to fetching all events (10000 is effectively unlimited)
+    const limit = parseInt(searchParams.get('limit') || '10000');
 
     // Fetch events with nested markets (events have proper categories)
     const events = await fetchEvents(limit);
