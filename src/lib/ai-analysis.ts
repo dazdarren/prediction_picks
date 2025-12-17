@@ -28,36 +28,27 @@ function getGemini() {
 function buildAnalysisPrompt(market: KalshiMarket): string {
   const impliedProb = ((market.yes_bid + market.yes_ask) / 2 * 100).toFixed(1);
 
-  return `Analyze this prediction market and estimate the TRUE probability of the outcome.
+  return `You are a prediction market analyst. Give a quick, actionable take on this market.
 
 Market: ${market.title}
-${market.subtitle ? `Details: ${market.subtitle}` : ''}
-Category: ${market.category}
-Current Market Implied Probability: ${impliedProb}%
-Market Closes: ${new Date(market.close_time).toLocaleDateString()}
+${market.yes_sub_title ? `Outcome: ${market.yes_sub_title}` : ''}
+Current Market Price: ${impliedProb}% implied probability
 ${market.rules_primary ? `Rules: ${market.rules_primary}` : ''}
 
-Based on your knowledge of current events, historical patterns, and relevant data:
+Compare the market price to what you believe the TRUE probability is. Then give ONE of these recommendations:
+- "buy_yes" if market is underpriced (your estimate is >10% higher than market)
+- "buy_no" if market is overpriced (your estimate is >10% lower than market)
+- "skip" if market is fairly priced (within 10% of your estimate)
 
-1. What is your estimated TRUE probability (0-100%) that this outcome will occur?
-2. How confident are you in this estimate (0-100%)?
-3. What are the key factors influencing this probability?
-4. Based on the difference between your estimate and market price, what is your recommendation?
-
-IMPORTANT: Respond in this exact JSON format:
+Respond in this exact JSON format:
 {
   "estimatedProbability": <number 0-100>,
   "confidence": <number 0-100>,
-  "reasoning": "<brief explanation>",
-  "keyFactors": ["<factor1>", "<factor2>", "<factor3>"],
-  "recommendation": "<buy_yes|buy_no|hold>"
+  "reasoning": "<exactly 2 sentences: what you think the true probability is and why>",
+  "recommendation": "<buy_yes|buy_no|skip>"
 }
 
-Be analytical and consider:
-- Base rates and historical precedent
-- Current news and developments
-- Potential for surprise outcomes
-- Time remaining until resolution`;
+Be direct. No hedging.`;
 }
 
 function parseAIResponse(response: string, provider: AIAnalysis['provider']): AIAnalysis {
@@ -70,13 +61,21 @@ function parseAIResponse(response: string, provider: AIAnalysis['provider']): AI
 
     const parsed = JSON.parse(jsonMatch[0]);
 
+    // Normalize recommendation
+    let recommendation: AIAnalysis['recommendation'] = 'skip';
+    const rec = (parsed.recommendation || '').toLowerCase();
+    if (rec.includes('buy_yes') || rec === 'yes') {
+      recommendation = 'buy_yes';
+    } else if (rec.includes('buy_no') || rec === 'no') {
+      recommendation = 'buy_no';
+    }
+
     return {
       provider,
       estimatedProbability: Math.min(100, Math.max(0, parsed.estimatedProbability)) / 100,
       confidence: Math.min(100, Math.max(0, parsed.confidence)) / 100,
       reasoning: parsed.reasoning || 'No reasoning provided',
-      keyFactors: parsed.keyFactors || [],
-      recommendation: parsed.recommendation || 'hold',
+      recommendation,
     };
   } catch (error) {
     console.error(`Error parsing ${provider} response:`, error);
@@ -85,8 +84,7 @@ function parseAIResponse(response: string, provider: AIAnalysis['provider']): AI
       estimatedProbability: 0.5,
       confidence: 0.2,
       reasoning: 'Failed to parse AI response',
-      keyFactors: [],
-      recommendation: 'hold',
+      recommendation: 'skip',
     };
   }
 }
@@ -119,8 +117,7 @@ export async function analyzeWithOpenAI(market: KalshiMarket): Promise<AIAnalysi
       estimatedProbability: 0.5,
       confidence: 0,
       reasoning: 'API error occurred',
-      keyFactors: [],
-      recommendation: 'hold',
+      recommendation: 'skip',
     };
   }
 }
@@ -148,8 +145,7 @@ export async function analyzeWithAnthropic(market: KalshiMarket): Promise<AIAnal
       estimatedProbability: 0.5,
       confidence: 0,
       reasoning: 'API error occurred',
-      keyFactors: [],
-      recommendation: 'hold',
+      recommendation: 'skip',
     };
   }
 }
@@ -157,7 +153,7 @@ export async function analyzeWithAnthropic(market: KalshiMarket): Promise<AIAnal
 export async function analyzeWithGemini(market: KalshiMarket): Promise<AIAnalysis> {
   try {
     const genAI = getGemini();
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
     const result = await model.generateContent(buildAnalysisPrompt(market));
     const response = result.response.text();
     return parseAIResponse(response, 'gemini');
@@ -168,8 +164,7 @@ export async function analyzeWithGemini(market: KalshiMarket): Promise<AIAnalysi
       estimatedProbability: 0.5,
       confidence: 0,
       reasoning: 'API error occurred',
-      keyFactors: [],
-      recommendation: 'hold',
+      recommendation: 'skip',
     };
   }
 }
@@ -212,21 +207,15 @@ export async function getConsensusAnalysis(market: KalshiMarket): Promise<Consen
   // Calculate mispricing score (edge * confidence)
   const mispricingScore = Math.abs(edgePercentage) * consensusConfidence;
 
-  // Determine recommendation based on edge and confidence
+  // Determine recommendation based on edge
   let recommendation: ConsensusAnalysis['recommendation'];
 
-  if (consensusConfidence < 0.3) {
-    recommendation = 'hold';
-  } else if (edgePercentage > 15) {
-    recommendation = 'strong_buy_yes';
-  } else if (edgePercentage > 5) {
+  if (edgePercentage > 10) {
     recommendation = 'buy_yes';
-  } else if (edgePercentage < -15) {
-    recommendation = 'strong_buy_no';
-  } else if (edgePercentage < -5) {
+  } else if (edgePercentage < -10) {
     recommendation = 'buy_no';
   } else {
-    recommendation = 'hold';
+    recommendation = 'skip';
   }
 
   return {

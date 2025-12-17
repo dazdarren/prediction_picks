@@ -3,6 +3,8 @@ export interface KalshiMarket {
   ticker: string;
   title: string;
   subtitle?: string;
+  yes_sub_title?: string;
+  no_sub_title?: string;
   category: string;
   status: string;
   yes_bid: number;
@@ -25,6 +27,12 @@ export interface KalshiEvent {
   subtitle?: string;
   category: string;
   markets: KalshiMarket[];
+  close_time?: string;
+}
+
+// For API responses that return events
+export interface EventsResponse {
+  events: KalshiEvent[];
 }
 
 // AI Analysis Types
@@ -33,8 +41,7 @@ export interface AIAnalysis {
   estimatedProbability: number;
   confidence: number;
   reasoning: string;
-  keyFactors: string[];
-  recommendation: 'buy_yes' | 'buy_no' | 'hold';
+  recommendation: 'buy_yes' | 'buy_no' | 'skip';
 }
 
 export interface ConsensusAnalysis {
@@ -44,7 +51,7 @@ export interface ConsensusAnalysis {
   consensusConfidence: number;
   impliedProbability: number;
   edgePercentage: number;
-  recommendation: 'strong_buy_yes' | 'buy_yes' | 'hold' | 'buy_no' | 'strong_buy_no';
+  recommendation: 'buy_yes' | 'buy_no' | 'skip';
   mispricingScore: number;
 }
 

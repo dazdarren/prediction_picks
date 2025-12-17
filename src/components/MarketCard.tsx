@@ -23,9 +23,15 @@ export default function MarketCard({ market, onAnalyze, isAnalyzing }: MarketCar
         </span>
       </div>
 
-      <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
         {market.title}
       </h3>
+
+      {market.yes_sub_title && (
+        <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-2">
+          {market.yes_sub_title}
+        </p>
+      )}
 
       {market.subtitle && (
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">

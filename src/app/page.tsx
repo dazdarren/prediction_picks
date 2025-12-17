@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
-import MarketCard from '@/components/MarketCard';
+import EventCard from '@/components/EventCard';
 import AnalysisModal from '@/components/AnalysisModal';
 import TopPicks from '@/components/TopPicks';
-import { KalshiMarket, ConsensusAnalysis } from '@/types';
+import { KalshiEvent, KalshiMarket, ConsensusAnalysis } from '@/types';
 
 export default function Home() {
-  const [markets, setMarkets] = useState<KalshiMarket[]>([]);
+  const [events, setEvents] = useState<KalshiEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [analyzingTicker, setAnalyzingTicker] = useState<string | null>(null);
   const [selectedAnalysis, setSelectedAnalysis] = useState<ConsensusAnalysis | null>(null);
@@ -17,25 +17,25 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMarkets = useCallback(async () => {
+  const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await fetch('/api/markets?limit=100');
-      if (!response.ok) throw new Error('Failed to fetch markets');
+      if (!response.ok) throw new Error('Failed to fetch events');
       const data = await response.json();
-      setMarkets(data.markets || []);
+      setEvents(data.events || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      setMarkets([]);
+      setEvents([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchMarkets();
-  }, [fetchMarkets]);
+    fetchEvents();
+  }, [fetchEvents]);
 
   const handleAnalyze = async (market: KalshiMarket) => {
     setAnalyzingTicker(market.ticker);
@@ -68,21 +68,23 @@ export default function Home() {
   };
 
   // Get unique categories
-  const categories = ['all', ...new Set(markets.map((m) => m.category).filter(Boolean))];
+  const categories = ['all', ...new Set(events.map((e) => e.category).filter(Boolean))];
 
-  // Filter markets
-  const filteredMarkets = markets.filter((market) => {
-    const matchesFilter = filter === 'all' || market.category === filter;
+  // Filter events
+  const filteredEvents = events.filter((event) => {
+    const matchesFilter = filter === 'all' || event.category === filter;
     const matchesSearch =
       searchTerm === '' ||
-      market.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (market.subtitle?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.markets.some((m) =>
+        m.yes_sub_title?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     return matchesFilter && matchesSearch;
   });
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <Header onRefresh={fetchMarkets} isLoading={isLoading} />
+      <Header onRefresh={fetchEvents} isLoading={isLoading} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Top Picks Section */}
@@ -129,7 +131,7 @@ export default function Home() {
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
             <p className="text-red-600 dark:text-red-400">{error}</p>
             <button
-              onClick={fetchMarkets}
+              onClick={fetchEvents}
               className="mt-2 text-sm text-red-600 dark:text-red-400 underline"
             >
               Try again
@@ -158,20 +160,20 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {/* Markets Grid */}
+            {/* Events Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMarkets.map((market) => (
-                <MarketCard
-                  key={market.ticker}
-                  market={market}
+              {filteredEvents.map((event) => (
+                <EventCard
+                  key={event.event_ticker}
+                  event={event}
                   onAnalyze={handleAnalyze}
-                  isAnalyzing={analyzingTicker === market.ticker}
+                  analyzingTicker={analyzingTicker}
                 />
               ))}
             </div>
 
             {/* Empty State */}
-            {filteredMarkets.length === 0 && !error && (
+            {filteredEvents.length === 0 && !error && (
               <div className="text-center py-12">
                 <svg
                   className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4"
