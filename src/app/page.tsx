@@ -28,19 +28,30 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<{ current: number; total: number } | undefined>(undefined);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/markets'); // Fetch all available events
-      if (!response.ok) throw new Error('Failed to fetch events');
-      const data = await response.json();
-      setEvents(data.events || []);
+      // Load first batch quickly for immediate display
+      const firstBatch = await fetch('/api/markets?limit=50');
+      if (!firstBatch.ok) throw new Error('Failed to fetch events');
+      const firstData = await firstBatch.json();
+      setEvents(firstData.events || []);
+      setIsLoading(false);
+
+      // Fetch remaining events in background
+      setIsLoadingMore(true);
+      const allEvents = await fetch('/api/markets');
+      if (allEvents.ok) {
+        const allData = await allEvents.json();
+        setEvents(allData.events || []);
+      }
+      setIsLoadingMore(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setEvents([]);
-    } finally {
       setIsLoading(false);
     }
   }, []);
@@ -252,8 +263,17 @@ export default function Home() {
               </select>
             </div>
           </div>
-          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {filteredEvents.length} markets found
+          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+            <span>{filteredEvents.length} markets found</span>
+            {isLoadingMore && (
+              <span className="flex items-center text-indigo-500">
+                <svg className="animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading more...
+              </span>
+            )}
           </div>
         </div>
 
